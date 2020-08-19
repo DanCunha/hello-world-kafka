@@ -1,6 +1,7 @@
 package com.teste.stream.kafka;
 
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.clients.producer.Callback;
@@ -12,18 +13,28 @@ import org.apache.kafka.common.serialization.StringSerializer;
 public class NewOrderMain {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
+		for (int i = 0; i < 100; i++) {
+			createProducer(i);	
+			Thread.sleep(2000);
+		}
+	}
+
+	public static void createProducer(int index) throws InterruptedException, ExecutionException {
 		var producer = new KafkaProducer<String, String>(properties());
-		var value = "321321,321344,PEDIJA";
-		var record = new ProducerRecord<>("ECOMERCE_NEW_ORDER", "Daniel", value);
-		var email = "Thank you for you order! sssss";
-		var emailRecord = new ProducerRecord<>("ECOMMERCE_SEND_EMAIL", email, email);
+		var key = UUID.randomUUID().toString();
+		var value = key + "321344,TICKET: " + index;
+		var record = new ProducerRecord<>("ECOMMERCE_NEW_ORDER", key, value);
+		var email = "Thank you for you order!";
+		var emailRecord = new ProducerRecord<>("ECOMMERCE_SEND_EMAIL", key, email);
 		Callback callback = (data, ex) -> {
 			if(ex != null) {
 				ex.printStackTrace();
 				return;
 			}
+			System.out.println("------------------------------------------------------------------------------------------");
 			System.out.println("Sucesso " + data.topic() + " - Partition: " + data.partition() + "/ offset: " + data.offset() + "/ timestamp: " + data.timestamp());
 		};
+
 		producer.send(record, callback).get();
 		producer.send(emailRecord, callback).get();
 	}
