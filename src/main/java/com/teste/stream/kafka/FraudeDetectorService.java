@@ -1,55 +1,32 @@
 package com.teste.stream.kafka;
 
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.UUID;
-
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 public class FraudeDetectorService {
 
 	public static void main(String[] args) {
-		var consumer = new KafkaConsumer<String, String>(properties());
-		consumer.subscribe(Collections.singletonList("ECOMMERCE_NEW_ORDER"));
-		while(true) {
-			var records = consumer.poll(Duration.ofMillis(100));
-			
-			if(!records.isEmpty()) {
-				System.out.println("Records found: " + records.count());
-				for(var record : records) {
-					System.out.println("---------------------------------");
-					System.out.println("Processing new order");
-					System.out.println(record.key());
-					System.out.println(record.value());
-					System.out.println(record.partition());
-					System.out.println(record.offset());
-					
-					try {
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					System.out.println("Order processed");
-				}	
-				continue;
-			}
-		
+		var fraudService = new FraudeDetectorService();
+		try(var service = new KafkaService(FraudeDetectorService.class.getSimpleName(),
+				"ECOMMERCE_NEW_ORDER", 
+				fraudService::parse)){
+			service.run();
 		}
-		
 	}
-
-	private static Properties properties() {
-		var properties = new Properties();
-		properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
-		properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-		properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-		properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, FraudeDetectorService.class.getSimpleName());
-		properties.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, FraudeDetectorService.class.getSimpleName() + UUID.randomUUID());
-		properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1"); //Processa de um por um
-		return properties;
+	
+	private void parse(ConsumerRecord<String, String> record) {
+		System.out.println("---------------------------------");
+		System.out.println("Processing new order");
+		System.out.println(record.key());
+		System.out.println(record.value());
+		System.out.println(record.partition());
+		System.out.println(record.offset());
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Order processed");
 	}
 
 }
