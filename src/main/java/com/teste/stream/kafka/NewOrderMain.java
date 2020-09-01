@@ -15,14 +15,14 @@ public class NewOrderMain {
 
 	public static void createProducer(int index) throws InterruptedException, ExecutionException {
 		try(var orderDispatcher = new KafkaDispatcher<Order>()){
-			try(var emailDispatcher = new KafkaDispatcher<String>()){
+			try(var emailDispatcher = new KafkaDispatcher<Email>()){
 				var userId = UUID.randomUUID().toString();
 				var orderId = UUID.randomUUID().toString();
 				var amount = new BigDecimal(Math.random() * 5000 + 1);
 				var order = new Order(userId, orderId, amount);
 				orderDispatcher.send("ECOMMERCE_NEW_ORDER", userId, order);
 
-				var email = "Thank you for you order!";
+				var email = new Email("Thank you for you order!", "body");
 				emailDispatcher.send("ECOMMERCE_SEND_EMAIL", userId, email);
 			}
 		}
